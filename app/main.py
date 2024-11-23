@@ -9,7 +9,7 @@ st.set_page_config(
 )
 st.image('images/deloitte_logo.png', width=100)
 st.title('Classification Model Powered by SFL Scientific (A Deloitte Business)')
-st.sidebar.image('images/sfl_logo.png', use_column_width=True)
+st.sidebar.image('images/sfl_logo.png', use_container_width=True)
 
 menu_1= ['Option A', 'Option B', 'Option C', 'Option D']
 choice_1 = st.sidebar.selectbox('Select Option', menu_1)
