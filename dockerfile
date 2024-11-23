@@ -12,5 +12,7 @@ RUN pip install pyarrow
 RUN pip install -r requirements.txt
 WORKDIR /app/app
 EXPOSE 8503
+ENTRYPOINT [ "streamlit", "run", "--server.port", "8503" ]
+CMD ["main.py"]
 
 
