@@ -1,5 +1,7 @@
 # AWS credentials
 molAI_demo.pem
+# Ignore catboost cache
+notebook/catboost_info/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

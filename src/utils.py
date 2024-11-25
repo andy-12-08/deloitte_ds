@@ -6,6 +6,8 @@ from sklearn.feature_selection import VarianceThreshold
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.decomposition import PCA
+from sklearn.metrics import confusion_matrix
+
 
 
 def remove_correlated_features(df, threshold=0.9):
@@ -34,7 +36,7 @@ def remove_correlated_features(df, threshold=0.9):
 
     return reduced_df
 
-def plot_correlation_heatmap(df):
+def plot_correlation_heatmap(df, annot=True):
     """
     Plots a heatmap of the correlation matrix for the given DataFrame.
 
@@ -46,7 +48,7 @@ def plot_correlation_heatmap(df):
 
     # Plot the heatmap
     plt.figure(figsize=(8, 6))  # Set the figure size
-    ax = sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
+    ax = sns.heatmap(corr_matrix, annot=annot, cmap='coolwarm', fmt='.2f', linewidths=0.5)
 
     # Move x-axis labels to the top
     ax.xaxis.tick_top()
@@ -54,7 +56,7 @@ def plot_correlation_heatmap(df):
     plt.xticks(rotation=90)
 
     # Add title
-    plt.title('Correlation Matrix Heatmap', pad=40)
+    plt.title('Correlation Heatmap', pad=40)
     plt.show()
 
 def remove_low_variance_features(df, threshold=0.01):
@@ -102,5 +104,45 @@ def plot_pca(df):
     plt.xlabel('Principal Component 1')
     plt.ylabel('Principal Component 2')
     plt.title('PCA plot')
+    plt.show()
+
+def confusion_matrix_heatmap(y_test, y_pred):
+    """
+    Plots a heatmap of the confusion matrix for the given true labels and predicted labels.
+
+    Parameters:
+    - y_test: array-like, true labels.
+    - y_pred: array-like, predicted labels.
+    """
+    cm = confusion_matrix(y_test, y_pred)
+    plt.figure(figsize=(10, 7))
+    sns.heatmap(cm, annot=True, fmt='d')
+    plt.xlabel('Predicted')
+    plt.ylabel('Actual')
+    plt.title('Confusion Matrix Heatmap')
+    plt.show()
+
+def plot_feature_importances(importances, features):
+    """
+    Plots a bar plot of feature importances.
+
+    Parameters:
+    - importances: array-like, feature importances.
+    - features: array-like, feature names.
+    """
+    # Create a DataFrame with feature importances
+    feature_importances = pd.DataFrame({'feature': features, 'importance': importances})
+    
+    # Sort features based on importance
+    feature_importances = feature_importances.sort_values('importance', ascending=False).reset_index(drop=True)
+    
+    # Plot the feature importances
+    plt.figure(figsize=(12, 6))
+    plt.bar(feature_importances['feature'], feature_importances['importance'])
+    plt.xlabel('Features')
+    plt.ylabel('Importance')
+    plt.title('Feature Importances')
+    plt.xticks(rotation=90)
+    plt.tight_layout()
     plt.show()
 
