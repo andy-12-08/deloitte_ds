@@ -7,6 +7,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.decomposition import PCA
 from sklearn.metrics import confusion_matrix
+from music21 import converter, note, chord, key, tempo
+from collections import Counter
+import glob
+
 
 
 
@@ -145,4 +149,152 @@ def plot_feature_importances(importances, features):
     plt.xticks(rotation=90)
     plt.tight_layout()
     plt.show()
+
+
+def extract_features_from_mdi(folder_path, composer):    
+    processed_data = pd.DataFrame()
+    mid_files = glob.glob(f'{folder_path}*.mid')
+    for mid_file in mid_files:
+        try:
+            # Load mid file
+            mid_data  = converter.parse(mid_file)
+
+            # ----------------------------
+            # 1. Key Features
+            # ----------------------------
+            try:
+                key_estimation = mid_data.analyze('key')
+                key_name = key_estimation.tonic.name  # Tonic (e.g., "C", "D")
+                key_mode = key_estimation.mode        # Major or minor mode
+                key_strength = key_estimation.correlationCoefficient  # Confidence in key estimation
+            except Exception as e:
+                print(f"Error analyzing key for {mid_file}: {e}")
+                key_name, key_mode, key_strength = None, None, 0
+
+            # Count key signature changes and summarize the timeline
+            key_signatures = [ks for ks in mid_data.recurse() if isinstance(ks, key.KeySignature)]
+            num_key_signature_changes = len(key_signatures)
+            most_frequent_key_signature = (
+                Counter([ks.sharps for ks in key_signatures]).most_common(1)[0][0] if key_signatures else None
+            )
+
+            # ----------------------------
+            # 2. Pitch Features
+            # ----------------------------
+            pitches = []
+            for elem in mid_data.flat.notes:
+                if isinstance(elem, note.Note):
+                    pitches.append(elem.pitch.ps)
+                elif isinstance(elem, chord.Chord):
+                    pitches.extend(p.ps for p in elem.pitches)
+
+            average_pitch = np.mean(pitches) if pitches else 0
+            median_pitch = np.median(pitches) if pitches else 0
+            std_dev_pitch = np.std(pitches) if pitches else 0
+            pitch_range = np.ptp(pitches) if pitches else 0
+            unique_pitch_classes = len(set(int(p) % 12 for p in pitches))
+
+            # Replace pitch class distribution with entropy (a scalar representation)
+            pitch_class_distribution = Counter(int(p) % 12 for p in pitches)
+            pitch_entropy = -sum(
+                (freq / len(pitches)) * np.log2(freq / len(pitches))
+                for freq in pitch_class_distribution.values()
+            ) if pitches else 0
+
+            # Extract melodic intervals and summarize
+            melodic_intervals = [pitches[i+1] - pitches[i] for i in range(len(pitches) - 1)]
+            average_melodic_interval = np.mean(melodic_intervals) if melodic_intervals else 0
+
+            # ----------------------------
+            # 3. Rhythmic Features
+            # ----------------------------
+            durations = [elem.quarterLength for elem in mid_data.flat.notes if isinstance(elem, (note.Note, chord.Chord))]
+            note_density = len(durations) / (mid_data.quarterLength if mid_data.quarterLength else 1)
+            rhythmic_variance = np.var(durations) if durations else 0
+            rest_proportion = len([elem for elem in mid_data.flat.notesAndRests if elem.isRest]) / len(durations) if durations else 0
+
+            # ----------------------------
+            # 4. Harmonic Features
+            # ----------------------------
+            chords = [elem for elem in mid_data.flat.notes if isinstance(elem, chord.Chord)]
+            chord_progressions = [chord.Chord(elem.pitches).commonName for elem in chords]
+            chord_diversity = len(set(chord_progressions)) if chord_progressions else 0
+            most_common_chord = Counter(chord_progressions).most_common(1)[0][0] if chord_progressions else None
+
+            # Compute consonance ratio
+            consonant_chords = {'major triad', 'minor triad', 'perfect fifth', 'major seventh'}
+            num_consonant_chords = sum(1 for chord in chord_progressions if chord in consonant_chords)
+            consonance_ratio = num_consonant_chords / len(chord_progressions) if chord_progressions else 0
+
+            # ----------------------------
+            # 5. Instrument Features
+            # ----------------------------
+            instruments = [part.partName for part in mid_data.parts if part.partName]
+            num_instruments = len(set(instruments))
+            instrument_diversity = len(set(instruments)) if instruments else 0
+            most_common_instrument = max(set(instruments), key=instruments.count) if instruments else None
+
+            # ----------------------------
+            # 6. Tempo and Structural Features
+            # ----------------------------
+            tempo_changes = mid_data.flat.getElementsByClass(tempo.MetronomeMark)
+            tempo_values = [t.number for t in tempo_changes] if tempo_changes else []
+            average_tempo = np.mean(tempo_values) if tempo_values else 0
+            min_tempo = min(tempo_values) if tempo_values else 0
+            max_tempo = max(tempo_values) if tempo_values else 0
+            tempo_variability = np.std(tempo_values) if tempo_values else 0
+
+            # Count time signature changes and summarize
+            time_signatures = [ts.ratioString for ts in mid_data.flat.getTimeSignatures()]
+            time_signature_changes = len(time_signatures)
+            most_frequent_time_signature = (
+                Counter(time_signatures).most_common(1)[0][0] if time_signatures else None
+            )
+
+            # Structural details
+            measure_count = len(mid_data.getElementsByClass('Measure'))
+            total_duration = mid_data.duration.quarterLength
+
+            # ----------------------------
+            # 7. Compile All Features
+            # ----------------------------
+            mid_features = {
+                "key_name": key_name,
+                "key_mode": key_mode,
+                "key_strength": key_strength,
+                "num_key_signature_changes": num_key_signature_changes,
+                "most_frequent_key_signature": most_frequent_key_signature,
+                "average_pitch": average_pitch,
+                "median_pitch": median_pitch,
+                "std_dev_pitch": std_dev_pitch,
+                "pitch_range": pitch_range,
+                "unique_pitch_classes": unique_pitch_classes,
+                "pitch_entropy": pitch_entropy,
+                "average_melodic_interval": average_melodic_interval,
+                "note_density": note_density,
+                "rhythmic_variance": rhythmic_variance,
+                "rest_proportion": rest_proportion,
+                "chord_diversity": chord_diversity,
+                "most_common_chord": most_common_chord,
+                "consonance_ratio": consonance_ratio,
+                "num_instruments": num_instruments,
+                "instrument_diversity": instrument_diversity,
+                "most_common_instrument": most_common_instrument,
+                "average_tempo": average_tempo,
+                "min_tempo": min_tempo,
+                "max_tempo": max_tempo,
+                "tempo_variability": tempo_variability,
+                "time_signature_changes": time_signature_changes,
+                "most_frequent_time_signature": most_frequent_time_signature,
+                "measure_count": measure_count,
+                "total_duration": total_duration,
+                "composer": composer
+            }
+
+            # Store the features in a dataframe and save to a CSV file
+            mid_features_df = pd.DataFrame(mid_features, index=[0])
+            processed_data = pd.concat([processed_data, mid_features_df], ignore_index=True)
+        except Exception as e:
+            print(f"Error processing {mid_file}: {e}")
+    return processed_data
 
