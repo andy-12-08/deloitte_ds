@@ -1,1 +1,9 @@
+hyperopt
+joblib
+matplotlib
+music21
+numpy
+pandas
+scikit_learn
+seaborn
 streamlit

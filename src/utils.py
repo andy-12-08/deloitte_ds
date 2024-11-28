@@ -11,7 +11,7 @@ from music21 import converter, note, chord, key, tempo
 from collections import Counter
 import glob
 
-
+from ast import literal_eval
 
 
 def remove_correlated_features(df, threshold=0.9):
@@ -88,7 +88,7 @@ def remove_low_variance_features(df, threshold=0.01):
 
     return reduced_df
 
-def plot_pca(df):
+def plot_pca(df, labels=None):
     """
     Plots a PCA plot for the given features DataFrame.
 
@@ -104,11 +104,20 @@ def plot_pca(df):
     principalComponents = pca.fit_transform(df)
     principalDf = pd.DataFrame(data = principalComponents, columns = ['principal component 1', 'principal component 2'])
 
-    plt.scatter(principalDf['principal component 1'], principalDf['principal component 2'])
-    plt.xlabel('Principal Component 1')
-    plt.ylabel('Principal Component 2')
-    plt.title('PCA plot')
-    plt.show()
+    # Plot the PCA results
+    plt.figure(figsize=(8, 6))
+    if labels is not None:
+        unique_labels = set(labels)
+        for label in unique_labels:
+            indices = [i for i, l in enumerate(labels) if l == label]
+            plt.scatter(
+                principalDf.iloc[indices, 0],
+                principalDf.iloc[indices, 1],
+                label=f'{label}'
+            )
+        plt.legend()
+    else:
+        plt.scatter(principalDf['principal component 1'], principalDf['principal component 2'])
 
 def confusion_matrix_heatmap(y_test, y_pred):
     """
@@ -150,8 +159,16 @@ def plot_feature_importances(importances, features):
     plt.tight_layout()
     plt.show()
 
+def extract_features_from_mdi(folder_path, composer): 
+    """
+    Extracts features from MIDI files in the given folder path and composer name.
 
-def extract_features_from_mdi(folder_path, composer):    
+    Parameters:
+    - folder_path: str, path to the folder containing MIDI files.
+    - composer: str, composer name.
+    Returns:
+    - pandas DataFrame containing the extracted features.
+    """   
     processed_data = pd.DataFrame()
     mid_files = glob.glob(f'{folder_path}*.mid')
     for mid_file in mid_files:
@@ -297,4 +314,63 @@ def extract_features_from_mdi(folder_path, composer):
         except Exception as e:
             print(f"Error processing {mid_file}: {e}")
     return processed_data
+
+def preprocess_inference_data(df, features_list, scaler):
+    """
+    Preprocesses the inference data by applying the same transformations as the training data.
+
+    Parameters:
+    - df: pandas DataFrame containing the inference data.
+    - features_list: list of features to include in the model.
+    - scaler: Scaler object used to scale the training data.
+
+    Returns:
+    - numpy array containing the preprocessed inference data.
+    """    
+    transformed_df = pd.DataFrame()
+    for i in range(df.shape[0]):
+        individual_df = pd.DataFrame(df.iloc[i]).T
+        individual_df.drop(['most_frequent_key_signature','most_common_chord','most_common_instrument','measure_count'], axis=1, inplace=True)
+        individual_df.dropna(inplace=True)
+        individual_df.reset_index(drop=True, inplace=True)
+
+        # Safely parse strings using literal_eval
+        # individual_df['note_density'] = individual_df['note_density'].apply(
+        #     lambda x: literal_eval(x) if isinstance(x, str) else x
+        # )
+        individual_df['note_density'] = individual_df['note_density'].apply(lambda x: eval(x))
+
+
+        # individual_df['total_duration'] = individual_df['total_duration'].apply(
+        #     lambda x: literal_eval(x) if isinstance(x, str) else x
+        # )
+        individual_df['total_duration'] = individual_df['total_duration'].apply(lambda x: eval(x))
+        
+
+        individual_df['most_frequent_time_signature'] = individual_df['most_frequent_time_signature'].apply(lambda x: eval(x))
+        # Apply one-hot encoding to the categorical features
+        key_name_dummies_unknown = pd.get_dummies(individual_df['key_name'], dtype=int)
+        key_mode_dummies_unknown = pd.get_dummies(individual_df['key_mode'], dtype=int)
+        individual_df = pd.concat([individual_df, key_name_dummies_unknown, key_mode_dummies_unknown], axis=1)
+        individual_df.drop(['key_name', 'key_mode'], axis=1, inplace=True)
+        # drop the 'composer' column and get the features
+        individual_df = individual_df.drop('composer', axis=1)
+        # key names that needs to be present in the inference data
+        feature_list_key_names = features_list[21:33]
+        new_keys = list(set(feature_list_key_names) - set(list(individual_df.columns)))
+        # handle the case where the key names are not present in the inference data
+        for key in new_keys:
+            individual_df[key] = 0
+        feature_list_key_mode = features_list[-1]
+        # key mode that needs to be present in the inference data
+        new_mode = list(set([feature_list_key_mode]) - set(list(individual_df.columns)))
+        # handle the case where the key mode is not present in the inference data
+        for mode in new_mode:
+            individual_df[mode] = 0
+        individual_df = individual_df[features_list]
+        transformed_df = pd.concat([transformed_df, individual_df], ignore_index=True)
+        # Scale the features using the scaler object
+        inference_data = scaler.transform(transformed_df)
+    return inference_data
+
 
