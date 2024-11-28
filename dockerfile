@@ -1,5 +1,5 @@
-# Base image
-FROM python:latest
+# Use a stable Python version
+FROM python:3.10
 
 # Set working directory
 WORKDIR /app
@@ -14,11 +14,13 @@ RUN apt-get update && \
     python3-distutils \
     && apt-get clean
 
-# Install pyarrow from pip, which includes pre-built binaries
-RUN pip install pyarrow
-
-# Install remaining dependencies
+# Upgrade pip and build tools to ensure compatibility
 RUN pip install --upgrade pip setuptools wheel
+
+# Install specific version of setuptools to fix the pkg_resources issue
+RUN pip install setuptools>=65.0.0
+
+# Install dependencies from requirements.txt
 RUN pip install -r requirements.txt
 
 # Set working directory for the app
