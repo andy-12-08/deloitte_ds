@@ -147,7 +147,9 @@ elif choice_1 == 'Demo':
             inference_data = preprocess_inference_data(features, features_list, scaler)
             classification = model_pipeline.predict(inference_data)
             # Get the maximum probability of each class for each sample in the inference data set
+            st.write(model_pipeline.predict_proba(inference_data))
             max_probs = model_pipeline.predict_proba(inference_data).max(axis=1)
+            st.write(max_probs)
 
             threshold = 0.5 # a set threshold for classification
             class_dict = {'Bach': 0, 'Beethoven': 1, 'Brahms': 2, 'Schubert': 3}

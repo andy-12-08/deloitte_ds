@@ -2,6 +2,7 @@
 molAI_demo.pem
 # Ignore catboost cache
 notebook/catboost_info/
+notebook/temp_cleaned.mid
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
