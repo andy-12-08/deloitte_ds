@@ -39,6 +39,7 @@ To replicate the environment, install the required Python dependencies:
 
 To run the Streamlit app locally:
 
-`streamlit run app/main.py`
+`cd app`
+`streamlit run main.py`
 
 ![Alt text](images/UI_image.png )
