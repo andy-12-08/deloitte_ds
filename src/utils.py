@@ -1,3 +1,7 @@
+'''
+This file contains utility functions for data preprocessing, feature extraction, and visualization.
+
+'''
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -10,9 +14,6 @@ from sklearn.metrics import confusion_matrix
 from music21 import converter, note, chord, key, tempo
 from collections import Counter
 import glob
-
-from ast import literal_eval
-
 
 def remove_correlated_features(df, threshold=0.9):
     """

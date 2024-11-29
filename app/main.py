@@ -110,17 +110,18 @@ choice_1 = st.sidebar.selectbox('Select Option', menu_1)
 
 if choice_1 == 'About':
     st.write('''
-    This application leverages advanced machine learning techniques to 
+    This application leverages traditional machine learning techniques to 
     classify and analyze music compositions based on their unique features. 
     Designed to identify composers and flag unknown pieces, the model 
     utilizes a robust pipeline of feature extraction, classification, 
     and probabilistic thresholding for high accuracy and adaptability. 
     Powered by cutting-edge AI technology, this tool showcases the seamless 
     integration of music theory and data science to revolutionize composer 
-    identification and music analysis. Developed by SFL Scientific, 
+    identification and music analysis. Inspired by SFL Scientific, 
     a Deloitte Business, it exemplifies innovation in transforming raw data 
     into actionable insights for music enthusiasts and professionals alike.
     ''')
+    st.image('images/music_image.png', use_column_width=True)
 elif choice_1 == 'Demo':
     # Allow multiple file uploads
     uploaded_files = st.file_uploader("Upload your file(s)", type=['mid'], accept_multiple_files=True)
