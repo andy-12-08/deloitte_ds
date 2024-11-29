@@ -29,7 +29,7 @@ The classifier effectively identifies the composer of most labeled files and fla
 
 ## PART_2: Data Science Challenge
 
-PART_2 involves analyzing structured datasets to address a specific challenge, by manipulating the data using pandas. The notebook is in ***notebook/PART_2.ipynb file*** and the output files are in ***data/***
+PART_2 involves analyzing structured datasets to address a specific challenge, by manipulating the data using pandas. The notebook is ***notebook/PART_2.ipynb file*** and the output files are in ***data/***
 
 ## Installation
 
