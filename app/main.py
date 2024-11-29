@@ -102,7 +102,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 st.image('images/deloitte_logo.png', width=100)
-st.title('Classification Model Powered by SFL Scientific (A Deloitte Business)')
+st.title('Revolutionizing Music Analysis with Machine Learning')
 st.sidebar.image('images/sfl_logo.png', use_column_width=True)
 
 menu_1= ['About', 'Demo']
@@ -110,22 +110,30 @@ choice_1 = st.sidebar.selectbox('Select Option', menu_1)
 
 if choice_1 == 'About':
     st.write('''
-    This is a classification model that predicts the likelihood of a customer to purchase a product. 
-    The model is powered by SFL Scientific, a Deloitte Business. 
+    This application leverages advanced machine learning techniques to 
+    classify and analyze music compositions based on their unique features. 
+    Designed to identify composers and flag unknown pieces, the model 
+    utilizes a robust pipeline of feature extraction, classification, 
+    and probabilistic thresholding for high accuracy and adaptability. 
+    Powered by cutting-edge AI technology, this tool showcases the seamless 
+    integration of music theory and data science to revolutionize composer 
+    identification and music analysis. Developed by SFL Scientific, 
+    a Deloitte Business, it exemplifies innovation in transforming raw data 
+    into actionable insights for music enthusiasts and professionals alike.
     ''')
 elif choice_1 == 'Demo':
     # Allow multiple file uploads
     uploaded_files = st.file_uploader("Upload your file(s)", type=['mid'], accept_multiple_files=True)
     if uploaded_files:
-        st.write("Uploaded files:")
+        # st.write("Uploaded files:")
         for uploaded_file in uploaded_files:
             file_path = os.path.join(TEMP_DIR, uploaded_file.name)
             # Save file temporarily
             with open(file_path, "wb") as f:
                 f.write(uploaded_file.read())
-            st.write(f"- {uploaded_file.name}")
+            # st.write(f"- {uploaded_file.name}")
 
-        if st.button("Delete Files"):
+        if st.button("Delete files from server"):
             # Delete all temporary files
             shutil.rmtree(TEMP_DIR)
             os.makedirs(TEMP_DIR)  # Recreate an empty temporary directory
@@ -135,7 +143,7 @@ elif choice_1 == 'Demo':
             # Example of processing files
             for file_name in os.listdir(TEMP_DIR):
                 file_path = os.path.join(TEMP_DIR, file_name)
-                st.write(f"Processing: {file_path}")
+            st.warning(f"Processing files")
             features = extract_features_from_mdi(os.path.join(TEMP_DIR, ''), composer='Unknown')
             features_html = """
             <span style="color:gold; font-size:20px; font-weight:bold;">Features</span>
@@ -147,10 +155,9 @@ elif choice_1 == 'Demo':
             inference_data = preprocess_inference_data(features, features_list, scaler)
             classification = model_pipeline.predict(inference_data)
             # Get the maximum probability of each class for each sample in the inference data set
-            st.write(model_pipeline.predict_proba(inference_data))
+            # st.write(model_pipeline.predict_proba(inference_data))
             max_probs = model_pipeline.predict_proba(inference_data).max(axis=1)
-            st.write(max_probs)
-
+            # st.write(max_probs)
             threshold = 0.5 # a set threshold for classification
             class_dict = {'Bach': 0, 'Beethoven': 1, 'Brahms': 2, 'Schubert': 3}
             # Classify the samples based on the threshold
